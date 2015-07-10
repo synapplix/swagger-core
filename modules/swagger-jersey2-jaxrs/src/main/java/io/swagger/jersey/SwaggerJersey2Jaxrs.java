@@ -79,7 +79,7 @@ public class SwaggerJersey2Jaxrs extends AbstractSwaggerExtension {
 
                     // since downstream processors won't know how to introspect @BeanParam, process here
                     for (Parameter param : extracted) {
-                        if (ParameterProcessor.applyAnnotations(null, param, paramType, paramAnnotations) != null) {
+                        if (ParameterProcessor.applyAnnotations(null, param, paramType, paramAnnotations, null) != null) {
                             parameters.add(param);
                         }
                     }

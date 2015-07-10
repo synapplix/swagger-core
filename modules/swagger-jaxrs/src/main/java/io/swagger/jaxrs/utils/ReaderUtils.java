@@ -55,7 +55,7 @@ public class ReaderUtils {
                     final List<Parameter> tmpParameters = collectParameters(genericParameterType, tmpAnnotations);
                     if (tmpParameters.size() >= 1) {
                         for (Parameter tmpParameter : tmpParameters) {
-                            if (ParameterProcessor.applyAnnotations(swagger, tmpParameter, genericParameterType, tmpAnnotations) != null) {
+                            if (ParameterProcessor.applyAnnotations(swagger, tmpParameter, genericParameterType, tmpAnnotations, cls) != null) {
                                 parameters.add(tmpParameter);
                             }
                         }
@@ -86,7 +86,7 @@ public class ReaderUtils {
             final List<Annotation> annotations = Arrays.asList(field.getAnnotations());
             final Type genericType = field.getGenericType();
             for (Parameter parameter : collectParameters(genericType, annotations)) {
-                if (ParameterProcessor.applyAnnotations(swagger, parameter, genericType, annotations) != null) {
+                if (ParameterProcessor.applyAnnotations(swagger, parameter, genericType, annotations, cls) != null) {
                     parameters.add(parameter);
                 }
             }

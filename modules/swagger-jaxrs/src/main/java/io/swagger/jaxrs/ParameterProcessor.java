@@ -1,6 +1,7 @@
 package io.swagger.jaxrs;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiParam;
@@ -31,7 +32,7 @@ import java.util.Map;
 public class ParameterProcessor {
     static Logger LOGGER = LoggerFactory.getLogger(ParameterProcessor.class);
 
-    public static Parameter applyAnnotations(Swagger swagger, Parameter parameter, Type type, List<Annotation> annotations) {
+    public static Parameter applyAnnotations(Swagger swagger, Parameter parameter, Type type, List<Annotation> annotations, Class<?> cls) {
         final AnnotationsHelper helper = new AnnotationsHelper(annotations);
         if (helper.isContext()) {
             return null;
@@ -41,7 +42,15 @@ public class ParameterProcessor {
             return null;
         }
         final String defaultValue = helper.getDefaultValue();
-        final JavaType javaType = TypeFactory.defaultInstance().constructType(type);
+        
+        JavaType javaType;
+        try {
+          javaType = TypeFactory.defaultInstance().constructType(type, cls);
+        } catch (Throwable t) {
+          System.out.println(t);
+          javaType = SimpleType.construct(cls);
+        }
+        
         if (parameter instanceof AbstractSerializableParameter) {
             final AbstractSerializableParameter<?> p = (AbstractSerializableParameter<?>) parameter;
 

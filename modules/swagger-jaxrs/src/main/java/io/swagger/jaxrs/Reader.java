@@ -260,7 +260,7 @@ public class Reader {
 
                     Operation operation = null;
                     if(apiOperation != null || config.isScanAllResources() || httpMethod != null || methodPath != null) { 
-                        operation = parseMethod(method, globalParameters);
+                        operation = parseMethod(method, globalParameters, cls);
                     }
                     if (operation == null) {
                         continue;
@@ -360,7 +360,7 @@ public class Reader {
                             }
                             path.set(httpMethod, operation);
 
-                            readImplicitParameters(method, operation);
+                            readImplicitParameters(method, operation, cls);
                         }
                     }
                 }
@@ -370,11 +370,11 @@ public class Reader {
         return swagger;
     }
 
-    private void readImplicitParameters(Method method, Operation operation) {
+    private void readImplicitParameters(Method method, Operation operation, Class<?> cls) {
         ApiImplicitParams implicitParams = method.getAnnotation(ApiImplicitParams.class);
         if (implicitParams != null && implicitParams.value().length > 0) {
             for (ApiImplicitParam param : implicitParams.value()) {
-                Parameter p = readImplicitParam(param);
+                Parameter p = readImplicitParam(param, method.getDeclaringClass());
                 if (p != null) {
                     operation.addParameter(p);
                 }
@@ -382,7 +382,7 @@ public class Reader {
         }
     }
 
-    protected Parameter readImplicitParam(ApiImplicitParam param) {
+    protected Parameter readImplicitParam(ApiImplicitParam param, Class<?> cls) {
         final Parameter p;
         if (param.paramType().equalsIgnoreCase("path")) {
             p = new PathParameter();
@@ -400,7 +400,7 @@ public class Reader {
         }
         final Type type = ReflectionUtils.typeFromString(param.dataType());
         return ParameterProcessor.applyAnnotations(swagger, p, type == null ? String.class : type,
-                Arrays.<Annotation>asList(param));
+                Arrays.<Annotation>asList(param), cls);
     }
 
     protected void readSwaggerConfig(Class<?> cls, SwaggerDefinition config) {
@@ -687,11 +687,11 @@ public class Reader {
         return responseHeaders;
     }
 
-    public Operation parseMethod(Method method) {
-        return parseMethod(method, Collections.<Parameter>emptyList());
+    public Operation parseMethod(Method method, Class<?> cls) {
+        return parseMethod(method, Collections.<Parameter>emptyList(), cls);
     }
 
-    private Operation parseMethod(Method method, List<Parameter> globalParameters) {
+    private Operation parseMethod(Method method, List<Parameter> globalParameters, Class<?> cls) {
         Operation operation = new Operation();
 
         ApiOperation apiOperation = getAnnotation(method, ApiOperation.class);
@@ -835,7 +835,7 @@ public class Reader {
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < genericParameterTypes.length; i++) {
             Type type = genericParameterTypes[i];
-            List<Parameter> parameters = getParameters(type, Arrays.asList(paramAnnotations[i]));
+            List<Parameter> parameters = getParameters(type, Arrays.asList(paramAnnotations[i]), cls);
 
             for (Parameter parameter : parameters) {
                 operation.parameter(parameter);
@@ -860,7 +860,7 @@ public class Reader {
         return annotation;
     }
 
-    private List<Parameter> getParameters(Type type, List<Annotation> annotations) {
+    private List<Parameter> getParameters(Type type, List<Annotation> annotations, Class<?> cls) {
         final Iterator<SwaggerExtension> chain = SwaggerExtensions.chain();
         if (!chain.hasNext()) {
             return Collections.emptyList();
@@ -875,7 +875,7 @@ public class Reader {
         if (parameters.size() > 0) {
             final List<Parameter> processed = new ArrayList<Parameter>(parameters.size());
             for (Parameter parameter : parameters) {
-                if (ParameterProcessor.applyAnnotations(swagger, parameter, type, annotations) != null) {
+                if (ParameterProcessor.applyAnnotations(swagger, parameter, type, annotations, cls) != null) {
                     processed.add(parameter);
                 }
             }
@@ -884,7 +884,7 @@ public class Reader {
             LOGGER.debug("no parameter found, looking at body params");
             final List<Parameter> body = new ArrayList<Parameter>();
             if (!typesToSkip.contains(type)) {
-                Parameter param = ParameterProcessor.applyAnnotations(swagger, null, type, annotations);
+                Parameter param = ParameterProcessor.applyAnnotations(swagger, null, type, annotations, cls);
                 if (param != null) {
                     body.add(param);
                 }

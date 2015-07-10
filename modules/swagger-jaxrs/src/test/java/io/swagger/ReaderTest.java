@@ -49,7 +49,7 @@ public class ReaderTest {
         Reader reader = new Reader(new Swagger());
         for (Method method : methods) {
             if (isValidRestPath(method)) {
-                Operation operation = reader.parseMethod(method);
+                Operation operation = reader.parseMethod(method, method.getClass());
                 assertNotNull(operation);
             }
         }
